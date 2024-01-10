@@ -67,7 +67,7 @@ def main():
     print("Sum: " + str(summ))
     voltage = (summ / 0b111111111111) * MCP3202_VDD
     print("Voltage: " + str(voltage))
-    sleep(0.5)
+    sleep(0.05)
 
     print("------")
 
