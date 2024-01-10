@@ -1,8 +1,6 @@
 from gpiozero import LED
 import serial
 from time import sleep
-from bitstring import BitArray
-
 import spidev
 
 led = LED(17)
@@ -66,7 +64,7 @@ def main():
     print("bytes[2]: ", bytes[2])
     summ = (bytes[1] << 8) | bytes[2]
     print("Sum: " + str(summ))
-    print("Bitarray: ", BitArray(bytes).bin)
+    print("Bitarray: ", bin(bytes)
     voltage = (summ / 0b111111111111) * MCP3202_VDD
     print("Voltage: " + str(voltage))
     sleep(0.05)
