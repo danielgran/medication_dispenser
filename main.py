@@ -13,7 +13,7 @@ spi.max_speed_hz = 5000
 
 MCP3202_STARTBIT = 1
 MCP3202_SGL = 1
-MCP3202_ODD = 0b101 # 0: Ch0, 1: Ch1
+MCP3202_ODD = 0b111 # Binary representation of the channel to read, ex. 0b101 = CH5, 0b100 = CH4
 MCP3202_MSBF = 1
 
 MCP3202_VDD = 5
