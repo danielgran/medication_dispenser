@@ -58,7 +58,7 @@ def generate_mcp3208_payload(channel=0):
   # 2. Byte: <D1><D0><D0>XXXXX
   # 3. Byte: XXXXXXXX
   payload = bytearray()
-  channel_selector = bin(channel)
+  channel_selector = channel
   payload.append((MCP3202_STARTBIT << 2) | (MCP3202_SGL << 1) | (((channel_selector & 0b100) >> 2) << 0))
   payload.append((channel_selector & 0b011) << 6)
   payload.append(0b11111111)
