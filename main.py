@@ -13,7 +13,7 @@ spi.max_speed_hz = 5000
 
 MCP3202_STARTBIT = 1
 MCP3202_SGL = 1
-MCP3202_ODD = 0b100 # 0: Ch0, 1: Ch1
+MCP3202_ODD = 0b101 # 0: Ch0, 1: Ch1
 MCP3202_MSBF = 1
 
 MCP3202_VDD = 5
@@ -22,7 +22,7 @@ MCP3202_VSS = 0
 # The Starting Payload configures the output of the A/D Converter via DOUT
 STARTPAYLOAD = bytearray()
 STARTPAYLOAD.append((MCP3202_STARTBIT << 2) | (MCP3202_SGL << 1) | (((MCP3202_ODD & 0b100) >> 2) << 0))
-STARTPAYLOAD.append((MCP3202_ODD & 0b011) << 5)
+STARTPAYLOAD.append((MCP3202_ODD & 0b011) << 6)
 STARTPAYLOAD.append(0b11111111)
 
 
