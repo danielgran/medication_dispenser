@@ -102,5 +102,8 @@ def main():
     process_btn(data_from_hmi)
 
 
+    sleep(1)
+
+
 
 main()
