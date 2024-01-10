@@ -64,7 +64,7 @@ def main():
     print("bytes[2]: ", bytes[2])
     summ = (bytes[1] << 8) | bytes[2]
     print("Sum: " + str(summ))
-    print("Bitarray: ", str(bin(bytes)))
+    print("Bitarray1: ", bin(bytes[1]))
     voltage = (summ / 0b111111111111) * MCP3202_VDD
     print("Voltage: " + str(voltage))
     sleep(0.05)
