@@ -22,7 +22,7 @@ MCP3202_VSS = 0
 # The Starting Payload configures the output of the A/D Converter via DOUT
 STARTPAYLOAD = bytearray()
 STARTPAYLOAD.append((MCP3202_STARTBIT << 2) | (MCP3202_SGL << 1) | ((MCP3202_ODD | 0b100) << 0))
-STARTPAYLOAD.append((MCP3202_ODD | 0b011) << 6)
+STARTPAYLOAD.append((MCP3202_ODD | 0b011) ^ 00000000)
 STARTPAYLOAD.append(0b11111111)
 
 
