@@ -59,10 +59,10 @@ def process_btn(data):
 def main():
   while True:
     bytes = spi.xfer(STARTPAYLOAD)
-    print(len(bytes))
-    print(bytes[0])
-    print(bytes[1])
-    print(bytes[2])
+    print("len(spi.xfer(STARTPAYLOAD)):" + len(bytes))
+    print("bytes[0]" + bytes[0])
+    print("bytes[1]" + bytes[1])
+    print("bytes[2]" + bytes[2])
     summ = (bytes[1] << 8) | bytes[2]
     print("Sum: " + str(summ))
     voltage = (summ / 0b111111111111) * MCP3202_VDD
