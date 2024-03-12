@@ -1,11 +1,13 @@
 import asyncio
 import json
+import time
 from asyncio import AbstractEventLoop
-from datetime import datetime
-
 from gpiozero import LED
 import serial
 import spidev
+
+SERIAL_PORT = "/dev/ttyUSB0"
+SERIAL_BAUDRATE = 9200
 
 MOSFET_LEFT = LED(12)  # GPIO PIN for left dispenser
 MOSFET_RIGHT = LED(6)  # GPIO PIN for right dispenser
@@ -93,7 +95,6 @@ async def drop_medication():
 
   for i in range(right):
     await toggle_dispenser(MOSFET_RIGHT)
-
 
 
 class Payload:
@@ -258,49 +259,31 @@ async def main_loop():
     await asyncio.sleep(2)
 
 
-
 device_settings = initialize_device_settings()
 
 async def main(event_loop):
   event_holder = EventHolder(event_loop)
   event_loop.set_debug(True)
-  print("Starting main loop")
-
   event_loop.create_task(main_loop())
 
-  hmi = serial.Serial('/dev/ttyS0', 9600, timeout=1)
-
+  await asyncio.sleep(1)
+  hmi = serial.Serial(SERIAL_PORT, SERIAL_BAUDRATE, bytesize=8, parity='N', stopbits=1, timeout=2,
+                      rtscts=False, dsrdtr=False)
+  print("Starting main loop")
   nextion_controller = NextionFacade(hmi)
-
-
+  
   while True:
-    await asyncio.sleep(0.0001)  # absolute minimum sleep time
+    await asyncio.sleep(0.01)  # absolute minimum sleep time
     try:
-      #print(hmi.in_waiting)
-      if hmi.in_waiting > 1:
+      if hmi.in_waiting:
         data = hmi.read(hmi.in_waiting)
-        if data != b'':
-          time = datetime.now()
-          print(str(time) + " Received data from HMI: " + str(data))
-          event_loop.create_task(process_hmi_command(data, device_settings))
+        current_time_with_format = time.strftime("%H:%M:%S")
+        print("[" + current_time_with_format + "] Received Data: " + data.__str__())
+        await process_hmi_command(data.__str__()) # process data from hmi
     except Exception as e:
-      hmi = serial.Serial('/dev/ttyS0', 9600, timeout=1)
-
-
-# event_loop.run_forever()
-
-# ttys0 = serial.Serial("/dev/ttyS0", 9600, parity=serial.PARITY_NONE, timeout=.1)
-
-
-#  print("Voltage CH0: " + str(read_adc_value_from_channel(0)))
-#  print("Voltage CH1: " + str(read_adc_value_from_channel(1)))
-#  print("Voltage CH2: " + str(read_adc_value_from_channel(2)))
-#  print("Voltage CH3: " + str(read_adc_value_from_channel(3)))
-#  print("Voltage CH4: " + str(read_adc_value_from_channel(4)))
-#  print("Voltage CH5: " + str(read_adc_value_from_channel(5)))
-#  print("Voltage CH6: " + str(read_adc_value_from_channel(6)))
-#  print("Voltage CH7: " + str(read_adc_value_from_channel(7)))
-#  print("------")
-
+      print(e)
+      await asyncio.sleep(.01)
+      hmi = serial.Serial(SERIAL_PORT, SERIAL_BAUDRATE)
+      hmi.write("com_star".encode('utf-8'))
 
 asyncio.get_event_loop().run_until_complete(main(asyncio.get_event_loop()))

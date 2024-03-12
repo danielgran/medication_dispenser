@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" autoUpload="Always" serverName="medic@rpi-med-prototype.local:22 password (6)" remoteFilesAllowedToDisappearOnAutoupload="false">
+  <component name="PublishConfigData" autoUpload="Always" serverName="medic@rpi-med-prototype.local:22 password (8)" remoteFilesAllowedToDisappearOnAutoupload="false">
     <serverData>
       <paths name="medic@rpi-med-prototype.local:22 password">
         <serverdata>
@@ -41,6 +41,20 @@
         <serverdata>
           <mappings>
             <mapping deploy="/home/medic/med_proj_py" local="$PROJECT_DIR$" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="medic@rpi-med-prototype.local:22 password (7)">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/medic/med_dose" local="$PROJECT_DIR$" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="medic@rpi-med-prototype.local:22 password (8)">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/medic/med_dose" local="$PROJECT_DIR$" />
           </mappings>
         </serverdata>
       </paths>
