@@ -11,6 +11,7 @@ SERIAL_BAUDRATE = 9200
 
 MOSFET_LEFT = LED(12)  # GPIO PIN for left dispenser
 MOSFET_RIGHT = LED(6)  # GPIO PIN for right dispenser
+MOSFET_HMI = LED(?)   # GPIO PIN for controlling the on/off behaviour of the HMI
 
 SENSOR_LEFT_DOWN = 0
 SENSOR_RIGHT_DOWN = 1
@@ -24,6 +25,8 @@ MCP3208_ODD = 0b111  # Binary representation of the channel to read, ex. 0b101 =
 MCP3208_MSBF = 1
 MCP3208_VDD = 5
 MCP3208_VSS = 0
+
+HMI_CORRECTLY_POWERED = False
 
 FILE = "data.txt"
 
@@ -76,7 +79,6 @@ def read_command():
 def write_command_to_HMI(command):
   pass
 
-
 async def toggle_dispenser(mosfet):
   mosfet.on()
   await asyncio.sleep(.5)
@@ -95,24 +97,61 @@ async def drop_medication():
     await toggle_dispenser(MOSFET_RIGHT)
 
 
-async def process_hmi_command(data):
+class Payload:
+  """
+  page:
+    0: Main Page
+    1: Startup Menu Page
+    2: Prototype Page
+    3: Production Page
+    4: Settings Page (Setting the correct dispenser settings
 
+  action:
+    ButtonPush, ButtonRelease, Shutdown, Error, PowerOn
+
+  payload:
+    ToggleMedicationDrop
+    InitialSendingPayload
+    A:0,B:0 // Payload used for modifying dispenser settings
+  """
+  def __init__(self, page, action, payload):
+    self.page = page
+    self.action = action
+    self.payload = payload
+
+  @staticmethod
+  def deserialize(raw):
+    pl = json.loads(raw.decode('utf'))
+    return Payload(pl['page'], pl['action'], pl['payload'])
+
+async def process_hmi_command(data):
   if data == 0:
     return
-  if data == b'\x02\x03':  # debug
-    MOSFET_LEFT.on()
-  elif data == b'\x02\x04':  # debug
-    MOSFET_LEFT.off()
-  elif data == b'\x04\x01':  # Settings Screen, up left
-    device_settings.dispenser_left += 1
-  elif data == b'\x04\x02':  # Settings Screen, down left
-    device_settings.dispenser_left -= 1
-  elif data == b'\x04\x03':  # Settings Screen, up right
-    device_settings.dispenser_right += 1
-  elif data == b'\x04\x04':  # Settings Screen, down right
-    device_settings.dispenser_right -= 1
-  elif data == b'\x03\x01':  # Drop the desired medication
-    drop_medication()
+
+  try:
+    packet = Payload.deserialize(data)
+  except Exception as e:
+    HMI_CORRECTLY_POWERED = False
+    print(e)
+
+  if packet.page == 0:
+    pass
+
+  if packet.page == 1: # Startup Menu Page
+    if packet.action == "PowerOn":
+      HMI_CORRECTLY_POWERED = True
+
+  if packet.page == 2:
+    if packet.action == "ButtonPush":
+      if packet.payload == "?":
+        drop_medication()
+
+  if packet.page == 4: # Device Settings Page
+    if packet.action == "UpdateDropsettings":
+      # payload has the type of "A:x,B:y,..." so here comes some string splitting into play
+      lists = packet.payload.split(";")
+      device_settings.dispenser_left = int(lists[0].split(":")[1])
+      device_settings.dispenser_right = int(lists[1].split(":")[1])
 
 
 def generate_mcp3208_payload(channel=0):
@@ -169,17 +208,58 @@ class EventHolder:
       self.loop.call_soon(write_warning_to_HMI("Left Upper Sensor not working"), self.loop)
 
 
+class NextionFacade:
+  """
+  This class holds a facade for displaying all kind of messages and seding data to the nextion display.
+
+  """
+
+  NEXTION_WARNING_PAGE_NO = -1
+  NEXTION_WARNING_PAGE_idnt = "txt_nextion_warning_page"
+  NEXTION_ERROR_PAGE_NO = -1
+  NEXTION_ERROR_PAGE_idnt = "txt_nextion_error_page"
+  NEXTION_INFO_PAGE_NO = -1
+  NEXTION_INFO_PAGE_idnt = "txt_nextion_info_page"
+
+
+  def __init__(self, hmi: Serial, active_page = 0):
+    self.hmi = hmi
+    self.active_page = active_page
+
+  def set_page(self, page: int):
+    self.send_command("page {}".format(page))
+
+  def set_display_message(self, display_message: str):
+    if active_page == self.NEXTION_INFO_PAGE_NO:
+      self.send_command(self.NEXTION_INFO_PAGE_idnt + ".txt=" + display_message)
+    if active_page == self.NEXTION_WARNING_PAGE_NO:
+      self.send_command(self.NEXTION_WARNING_PAGE_idnt + ".txt=" + display_message)
+    if active_page == self.NEXTION_ERROR_NO:
+      self.send_command(self.NEXTION_ERROR_PAGE_NO + ".txt=" + display_message)
+
+
+  def send_command(self, command):
+    self.hmi.write(command)
+    self.hmi.write(0xFF)
+    self.hmi.write(0xFF)
+    self.hmi.write(0xFF)
+
+
 async def int_print():
   while True:
     print("int_print")
     await asyncio.sleep(1)
 
 
+
+
 async def main_loop():
-  print("Starting main loop")
+  print("toggle_dispenser start")
+  while True:
+    await asyncio.sleep(2)
+
 
 device_settings = initialize_device_settings()
-
 
 async def main(event_loop):
   event_holder = EventHolder(event_loop)
@@ -189,6 +269,9 @@ async def main(event_loop):
   await asyncio.sleep(1)
   hmi = serial.Serial(SERIAL_PORT, SERIAL_BAUDRATE, bytesize=8, parity='N', stopbits=1, timeout=2,
                       rtscts=False, dsrdtr=False)
+  print("Starting main loop")
+  nextion_controller = NextionFacade(hmi)
+  
   while True:
     await asyncio.sleep(0.01)  # absolute minimum sleep time
     try:
